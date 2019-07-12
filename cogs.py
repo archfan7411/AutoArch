@@ -3,6 +3,7 @@ from discord.ext import commands
 import random
 import settings
 import checks
+import misc
 
 class Moderation(commands.Cog):
     def __init__(self, bot):
@@ -46,11 +47,12 @@ class Moderation(commands.Cog):
         await ctx.send('Kicked '+str(i)+' member(s).')
 
     @commands.command(help = 'Mass-deletes a specified number of messages in the current channel.')
-    @commands.check(checks.bot_admin_or_manage_messages)
     @commands.check(checks.admin_or_manage_messages)
+    @commands.check(checks.bot_admin_or_manage_messages)
     async def clear(self, ctx, amount : int):
         if amount < 1:
-            await ctx.send('You need')
+            await ctx.send('You can only clear a positive number of messages!', delete_after=5)
+            return
         await ctx.message.delete()
         i = 0
         async for message in ctx.channel.history(limit = amount):
@@ -95,14 +97,9 @@ class Fun(commands.Cog):
             description = choice,
             colour = discord.Colour.gold()
         )
-        choice_embed.set_footer(text=random.choice(settings.quotes_short))
+        choice_embed.set_footer(text = misc.get_embed_footer(ctx))
         choice_embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=choice_embed)
-
-    @commands.command(help = '"Let Me Google That For You": Returns a link to search the term on Google.')
-    async def lmgtfy(self, ctx, *, term):
-        msg = 'https://google.com/search?q=' + term.replace(' ', '+')
-        await ctx.send(msg)
 
     @commands.command(help = 'Randomly picks an option from a comma-separated list.')
     async def choose(self, ctx, *, options):
@@ -112,7 +109,19 @@ class Fun(commands.Cog):
             description = 'I pick '+choice+'.',
             colour = discord.Colour.gold()
         )
-        pick_embed.set_footer(text=random.choice(settings.quotes_short))
+        pick_embed.set_footer(text = misc.get_embed_footer(ctx))
+        pick_embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=pick_embed)
+
+    @commands.command(help = 'Randomly selects a user in the server.')
+    async def pickuser(self, ctx):
+        pick = random.choice([member for member in ctx.guild.members if not member.bot])
+        pick_embed = discord.Embed(
+            title = 'I pick...',
+            description = pick.mention+'!',
+            colour = discord.Colour.gold()
+        )
+        pick_embed.set_footer(text = misc.get_embed_footer(ctx))
         pick_embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=pick_embed)
 
@@ -128,9 +137,35 @@ class Utility(commands.Cog):
     @commands.command(help = 'Invite link for the bot.')
     async def invite(self, ctx):
         invite_embed = discord.Embed(
-            description = '[Invite me!](https://discordapp.com/api/oauth2/authorize?client_id=576776255513296896&permissions=0&scope=bot)\n'+random.choice(settings.quotes),
+            description = '[Invite me!](https://discordapp.com/api/oauth2/authorize?client_id='+str(ctx.bot.user.id)+'&permissions=0&scope=bot)',
             colour = discord.Colour.gold()
         )
         invite_embed.set_thumbnail(url=ctx.bot.user.avatar_url)
         invite_embed.set_author(name = str(ctx.author), icon_url = ctx.author.avatar_url)
+        invite_embed.set_footer(text = misc.get_embed_footer(ctx))
         await ctx.send(embed=invite_embed)
+
+    @commands.command(help = 'Shows information about the server.')
+    async def serverinfo(self, ctx):
+        guild = ctx.guild
+        info_embed = discord.Embed(
+            title = ctx.guild.name,
+            colour = discord.Colour.gold()
+        )
+        info_embed.add_field(
+            name = 'General',
+            value = 'Total members: '+str(len(guild.members))+'\nBot users: '+str(len([member for member in guild.members if member.bot]))+'\nTotal Channels: '+str(len(guild.channels)-len(guild.categories))+'\nText Channels: '+str(len(guild.text_channels))+'\nVoice Channels: '+str(len(guild.voice_channels))
+        )
+        info_embed.add_field(
+            name = 'Server',
+            value = 'Owner: '+ctx.guild.owner.mention+'\nTotal Roles: '+str(len(guild.roles))+'\nServer Region: `'+str(guild.region)+'`\nGuild ID: `'+str(guild.id)+'`'
+        )
+        info_embed.set_thumbnail(url = guild.icon_url)
+        info_embed.set_author(name = str(ctx.author), icon_url = ctx.author.avatar_url)
+        info_embed.set_footer(text = misc.get_embed_footer(ctx))
+        await ctx.send(embed=info_embed)
+
+    @commands.command(help = '"Let Me Google That For You": Returns a link to search the term on Google.')
+    async def lmgtfy(self, ctx, *, term):
+        msg = 'https://google.com/search?q=' + term.replace(' ', '+')
+        await ctx.send(msg)

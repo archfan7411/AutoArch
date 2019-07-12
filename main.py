@@ -3,6 +3,7 @@ from discord.ext import commands
 import cogs
 import settings
 import random
+import misc
 
 bot = commands.Bot(command_prefix='=')
 
@@ -14,6 +15,7 @@ bot.add_cog(cogs.Utility(bot))
 async def on_ready():
     activity = discord.Activity(name=bot.command_prefix+'help', type=discord.ActivityType.watching)
     await bot.change_presence(activity = activity)
+    bot.appinfo = await bot.application_info()
     print('Logged in as '+str(bot.user)+'\n---\nGuilds: '+str(len(bot.guilds)))
 
 @bot.event
@@ -38,7 +40,7 @@ class AutoArchHelpCommand(commands.MinimalHelpCommand):
             description = self.get_opening_note(),
             colour = discord.Colour.gold()
         )
-        help_embed.set_footer(text = random.choice(settings.quotes_short))
+        help_embed.set_footer(text = misc.get_embed_footer(ctx))
         help_embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
         for cog in mapping.keys():
 
@@ -59,7 +61,7 @@ class AutoArchHelpCommand(commands.MinimalHelpCommand):
             description = command.help,
             colour = discord.Colour.gold()
         )
-        help_embed.set_footer(text = random.choice(settings.quotes_short))
+        help_embed.set_footer(text = misc.get_embed_footer(ctx))
         help_embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
 
         await self.get_destination().send(embed = help_embed)
@@ -72,7 +74,7 @@ class AutoArchHelpCommand(commands.MinimalHelpCommand):
             description = commands,
             colour = discord.Colour.gold()
         )
-        help_embed.set_footer(text = random.choice(settings.quotes_short))
+        help_embed.set_footer(ttext = misc.get_embed_footer(ctx))
         help_embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
 
         await self.get_destination().send(embed = help_embed)
@@ -85,7 +87,7 @@ class AutoArchHelpCommand(commands.MinimalHelpCommand):
             description = commands,
             colour = discord.Colour.gold()
         )
-        help_embed.set_footer(text = random.choice(settings.quotes_short))
+        help_embed.set_footer(text = misc.get_embed_footer(ctx))
         help_embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
 
         await self.get_destination().send(embed = help_embed)
@@ -98,9 +100,33 @@ async def source(ctx):
         colour = discord.Colour.gold()
     )
     source_embed.set_thumbnail(url = ctx.bot.user.avatar_url)
-    source_embed.set_footer(text = random.choice(settings.quotes_short))
+    source_embed.set_footer(text = misc.get_embed_footer(ctx))
     source_embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
     await ctx.send(embed = source_embed)
+
+@bot.command(help = 'Shows information about the bot.')
+async def info(ctx):
+    info_embed = discord.Embed(
+        title = 'Bot Info',
+        description = 'I\'m '+ctx.bot.user.mention+', and I was created by '+str(ctx.bot.appinfo.owner)+'.\nSee `'+ctx.bot.command_prefix+'help` for a list of commands.\nI can see `'+str(len(bot.guilds))+'` servers and have a latency of `'+str(int(bot.latency*1000))+'` ms.',
+        colour = discord.Colour.gold()
+    )
+    info_embed.set_thumbnail(url = ctx.bot.user.avatar_url)
+    info_embed.set_author(name = str(ctx.author), icon_url = ctx.author.avatar_url)
+    info_embed.set_footer(text = misc.get_embed_footer(ctx))
+    await ctx.send(embed = info_embed)
+
+@bot.command(help = 'Shows the bot\'s latency.')
+async def ping(ctx):
+    ping_embed = discord.Embed(
+        title = 'Pong!',
+        description = 'Bot latency: `'+str(int(ctx.bot.latency*1000))+' ms`',
+        colour = discord.Colour.gold()
+    )
+    ping_embed.set_thumbnail(url=ctx.bot.user.avatar_url)
+    ping_embed.set_author(name = str(ctx.author), icon_url = ctx.author.avatar_url)
+    ping_embed.set_footer(text = misc.get_embed_footer(ctx))
+    await ctx.send(embed=ping_embed)
 
 bot.help_command = AutoArchHelpCommand()
 
